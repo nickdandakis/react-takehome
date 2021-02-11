@@ -1,33 +1,30 @@
 const getRandomInteger = (max) => Math.floor(Math.random() * Math.floor(max));
 
-export default (request, response) => {
-  response.setHeader('Content-Type', 'application/json');
+export default async (request, response) => {
+  response.setHeader("Content-Type", "application/json");
 
-  if (request.method === 'GET') {
-    response.statusCode = 200;
-    return response.end(JSON.stringify({message: 'Only available through POST'}));
-  } else if (request.method === 'POST') {
-    const hasFailed = !!getRandomInteger(2);
-    const randomTimeout = getRandomInteger(8000);
-    const payload = (
-      hasFailed
-      ? {
-        message: 'Sorry, you have reached teapot not parrot',
-        timeout: randomTimeout,
-      }
-      : {
-        ...request.body,
-        timeout: randomTimeout,
-      }
-    );
+  if (request.method === "POST") {
+    return new Promise((resolve) => {
+      const hasFailed = !!getRandomInteger(2);
+      const randomTimeout = getRandomInteger(8000);
 
-    response.statusCode = (hasFailed ? 418 : 202);
+      const payload = hasFailed
+        ? {
+            message: "Sorry, you have reached teapot not parrot",
+            timeout: randomTimeout,
+          }
+        : {
+            ...request.body,
+            timeout: randomTimeout,
+          };
 
-    setTimeout(() => {
-      return response.end(JSON.stringify(payload));
-    }, randomTimeout);
+      response.statusCode = hasFailed ? 418 : 202;
+
+      setTimeout(() => {
+        resolve(response.send(payload));
+      }, randomTimeout);
+    });
   } else {
-    response.statusCode = 404;
-    return response.end();
+    return response.status(405).send({ message: "Method not allowed" });
   }
-}
+};
